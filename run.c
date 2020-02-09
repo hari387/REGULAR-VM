@@ -42,15 +42,24 @@ int main(int argc,char* argv[]){
 		if(opcode == UINT8_MAX)break;
 		executeInstruction(opcode,registers,pc,sp,memory,programBegin);
 		*pc+=1;
-		printf("Registers: ");
-		for(int i =0;i<32;i++)
-			printf("%u,",registers[i]);
-		printf("\nStack: ");
-		for(int i =0;i<10;i++){
-			printf("%u,",memory[1000+i]);
-		}
-		getchar();
+		//printf("Registers: ");
+		//for(int i =0;i<32;i++)
+		//	printf("%u,",registers[i]);
+		//printf("\nStack: ");
+		//for(int i =0;i<10;i++){
+		//	printf("%u,",memory[1000+i]);
+		//}
+		//getchar();
 	}
+	printf("Registers: ");
+	for(int i =0;i<32;i++){
+		printf("%u,",registers[i]);
+	}
+	printf("\nStack: ");
+	for(int i =0;i<10;i++){
+		printf("%u,",memory[1000+i]);
+	}
+	printf("\n");
 
 	return 0;
 }
@@ -60,31 +69,38 @@ void executeInstruction(uint8_t opcode,uint32_t registers[],uint32_t* pc, uint32
 	uint8_t rA = memory[*pc+programBegin] >> 8;
 	uint8_t rB = memory[*pc+programBegin] >> 16;
 	uint8_t rC = memory[*pc+programBegin] >> 24;
-	printf("Program Counter: %u\n",*pc);
+	//printf("Program Counter: %u\n",*pc);
 	uint8_t imm8 = rC;
 	uint16_t imm16 = ((uint16_t)rC << 8) | rB;
 	uint32_t trash = 0;
 
 	switch(opcode){
 		case NOP:
+			//printf("nop\n");
 			break;
 		case ADD:
 			registers[rA] = (uint32_t)registers[rB] + (uint32_t)registers[rC];
+			//printf("add %d %d %d\n",rA,rB,rC);
 			break;
 		case SUB:
 			registers[rA] = (uint32_t)registers[rB] - (uint32_t)registers[rC];
+			//printf("sub %d %d %d\n",rA,rB,rC);
 			break;
 		case AND:
 			registers[rA] = registers[rB] & registers[rC];
+			//printf("and %d %d %d\n",rA,rB,rC);
 			break;
 		case ORR:
 			registers[rA] = registers[rB] | registers[rC];
+			//printf("orr %d %d %d\n",rA,rB,rC);
 			break;
 		case XOR:
 			registers[rA] = registers[rB] ^ registers[rC];
+			//printf("xor %d %d %d\n",rA,rB,rC);
 			break;
 		case NOT:
 			registers[rA] = ~registers[rB];
+			//printf("not %d %d\n",rA,rB);
 			break;
 		case LSH:
 			if(registers[rC] >= 32 && registers[rC] <= -32){ //signed - unsigned comparison is weird
@@ -94,6 +110,7 @@ void executeInstruction(uint8_t opcode,uint32_t registers[],uint32_t* pc, uint32
 			} else {
 				registers[rA] = registers[rB] << (int32_t)registers[rC];
 			}
+			//printf("lsh %d %d %d\n",rA,rB,rC);
 			break;
 		case ASH:
 			if(registers[rC] >= 32 || registers[rC] <= -32){
@@ -103,6 +120,7 @@ void executeInstruction(uint8_t opcode,uint32_t registers[],uint32_t* pc, uint32
 			} else {
 				registers[rA] = registers[rB] << registers[rC];
 			}
+			//printf("ash %d %d %d\n",rA,rB,rC);
 			break;
 		case TCU:
 			if(registers[rB] == registers[rC]){
@@ -112,6 +130,7 @@ void executeInstruction(uint8_t opcode,uint32_t registers[],uint32_t* pc, uint32
 			} else {
 				registers[rA] = -1;
 			}
+			//printf("tcu %d %d %d\n",rA,rB,rC);
 			break;
 		case TCS:
 			if(registers[rB] == registers[rC]){
@@ -121,24 +140,31 @@ void executeInstruction(uint8_t opcode,uint32_t registers[],uint32_t* pc, uint32
 			} else {
 				registers[rA] = -1;
 			}
+			//printf("tcs %d %d %d\n",rA,rB,rC);
 			break;
 		case SET:
 			registers[rA] = ((int16_t)imm16);
+			//printf("set %d %d\n",rA,rB);
 			break;
 		case MOV:
 			registers[rA] = registers[rB];
+			//printf("mov %d %d\n",rA,rB);
 			break;
 		case LDW:
 			registers[rA] = memory[registers[rB]];
+			//printf("ldw %d %d\n",rA,rB);
 			break;
 		case STW:
 			memory[registers[rA]] = registers[rB];
+			//printf("stw %d %d\n",rA,rB);
 			break;
 		case LDB:
 			registers[rA] = (uint8_t)(memory[registers[rB]]);
+			//printf("ldb %d %d\n",rA,rB);
 			break;
 		case STB:
 			memory[registers[rA]] = (uint8_t)(registers[rB]);
+			//printf("stb %d %d\n",rA,rB);
 			break;
 	}
 	return;

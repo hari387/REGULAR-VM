@@ -43,7 +43,7 @@ int main(int argc, char* argv[]){
 
 	generateBaseMacros(macroTable);
 
-	int lineNumber = 0;
+	int lineNumber = -1;
 
 	ParseLabelsMacros(file,labelTable,macroTable,&lineNumber);
 
@@ -89,6 +89,10 @@ void assemble(FILE* file,FILE* bin,Label** labelTable,Macro** macroTable){
 	/* note that fgets don't strip the terminating \n, checking its
 	presence would allow to handle lines longer that sizeof(line) */
 
+		if(line[1] == '\n' || line[0] == '#'){
+			continue;
+		}
+
 		line[strlen(line)-2] = '\0'; //get rid of \n character at end of line
 
 		token = strtok(line," ");
@@ -104,6 +108,8 @@ void assemble(FILE* file,FILE* bin,Label** labelTable,Macro** macroTable){
 		} else if(strcmp(token,"def") == 0){
 			macroDef = 1;
 			continue;
+		} else if(strcmp(token,"label") == 0){
+			continue;
 		} else if(macroDef == 1){
 			if(strcmp(token,"end") == 0){
 				macroDef = 0;
@@ -114,7 +120,7 @@ void assemble(FILE* file,FILE* bin,Label** labelTable,Macro** macroTable){
 		opcode = getOpcode(token);
 		InstructionType instrType = getInstructionType(opcode);
 
-		if(opcode == 17 && strcmp(token,"label") != 0){ // if it is not a base instruction, it is a macro or label
+		if(opcode == 17){ // if it is not a base instruction or a label, it is a macro
 			macroInstr.instruction32 = 0;
 			macro = getMacro(macroTable,token);
 			for(int i = 0; i < macro->argSize; i++){

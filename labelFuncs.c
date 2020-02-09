@@ -64,6 +64,11 @@ void ParseLabelsMacros(FILE* file,Label** labelTable,Macro** macroTable,int* lin
 	uint8_t constArg8;
 	uint16_t constArg16;
 	while(fgets(line,sizeof(line),file)){
+
+		if(line[1] == '\n' || line[0] == '#'){
+			continue;
+		}
+
 		line[strlen(line)-2] = '\0';
 		token = strtok(line," ");
 
@@ -107,8 +112,7 @@ void ParseLabelsMacros(FILE* file,Label** labelTable,Macro** macroTable,int* lin
 			token = strtok(NULL," ");
 			Label* label = initLabel(token,*lineNumber);
 			insertLabel(label,labelTable);
-			(*lineNumber)++;
-		} else if(strcmp(token,"include") == 0){
+		} else if(strcmp(token,"inc") == 0){
 			token = strtok(NULL," ");
 			header = fopen(token,"r");
 			ParseLabelsMacros(header,labelTable,macroTable,lineNumber);
