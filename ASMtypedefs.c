@@ -6,7 +6,8 @@
 #include "util/macroVectors.c"
 
 #define asm_PC 0
-#define asm_AT 30
+#define asm_AT0 29
+#define asm_AT1 30
 #define asm_SP 31
 
 #define macroTableSize 100

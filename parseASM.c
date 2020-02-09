@@ -62,7 +62,8 @@ Label* retrieveLabel(char* name,Label** labelTable);
 int evalToken(char** tokenptr,Label** labelTable){
 	Label* lookup;
 	if(strcmp((*tokenptr),"sp")==0)return asm_SP;
-	else if(strcmp((*tokenptr),"at")==0)return asm_AT;
+	else if(strcmp((*tokenptr),"at0")==0)return asm_AT0;
+	else if(strcmp((*tokenptr),"at1")==0)return asm_AT1;
 	else if(strcmp((*tokenptr),"pc")==0)return asm_PC;
 	else if(NULL != (lookup = retrieveLabel(*tokenptr,labelTable))){
 		return lookup->address;
