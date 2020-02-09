@@ -10,20 +10,20 @@ typedef struct Token{
 	// if(!isNum){0 is +, 1 is -, 2 is *, 3 is /, 4 is (, 5 is ) }
 } Token;
 
-typedef struct Node{
-	struct Node* next;
-	struct Node* prev;
+typedef struct deqNode{
+	struct deqNode* next;
+	struct deqNode* prev;
 	Token val;
-} Node;
+} deqNode;
 
 typedef struct deque{
-	Node* head;
-	Node* tail;
+	deqNode* head;
+	deqNode* tail;
 	int size;
 } deque;
 
 void printDeque(deque* d){
-	Node* curr = d->head;
+	deqNode* curr = d->head;
 	while(curr != NULL){
 		if(curr->val.isNum){
 			printf("Num: %d\n",curr->val.num);
@@ -53,12 +53,12 @@ deque* initDeque(){
 }
 
 void delDeque(deque* d){
-	Node* curr = d->head;
+	deqNode* curr = d->head;
 	if(curr == NULL){
 		free(d);
 		return;
 	}
-	Node* second = d->head->next;
+	deqNode* second = d->head->next;
 	while(second != NULL){
 		free(curr);
 		curr = second;
@@ -70,7 +70,7 @@ void delDeque(deque* d){
 
 Token pop_back_deque(deque* d){
 	if(d->head == NULL){
-		error("Popped from empty deque");
+		errExit("Popped from empty deque");
 	}
 	Token result;
 	result = d->tail->val;
@@ -79,7 +79,7 @@ Token pop_back_deque(deque* d){
 		d->tail = NULL;
 		d->head = NULL;
 	} else {
-		Node* last = d->tail->prev;
+		deqNode* last = d->tail->prev;
 		free(d->tail);
 		d->tail = last;
 	}
@@ -89,7 +89,7 @@ Token pop_back_deque(deque* d){
 
 Token pop_front_deque(deque* d){
 	if(d->head == NULL){
-		error("Popped from empty deque");
+		errExit("Popped from empty deque");
 	}
 	Token result;
 	result = d->head->val;
@@ -98,7 +98,7 @@ Token pop_front_deque(deque* d){
 		d->head = NULL;
 		d->tail = NULL;
 	} else {
-		Node* first = d->head->next;
+		deqNode* first = d->head->next;
 		free(d->head);
 		d->head = first;
 	}
@@ -108,13 +108,13 @@ Token pop_front_deque(deque* d){
 
 void push_back_deque(deque* d,Token t){
 	if(d->head == NULL){
-		d->head = (Node*)malloc(sizeof(Node));
+		d->head = (deqNode*)malloc(sizeof(deqNode));
 		d->head->val = t;
 		d->head->prev = NULL;
 		d->head->next = NULL;
 		d->tail = d->head;
 	} else {
-		Node* last = (Node*)malloc(sizeof(Node));
+		deqNode* last = (deqNode*)malloc(sizeof(deqNode));
 		last->val = t;
 		last->prev = d->tail;
 		last->next = NULL;
@@ -126,13 +126,13 @@ void push_back_deque(deque* d,Token t){
 
 void push_front_deque(deque* d,Token t){
 	if(d->head == NULL){
-		d->head = (Node*)malloc(sizeof(Node));
+		d->head = (deqNode*)malloc(sizeof(deqNode));
 		d->head->val = t;
 		d->head->prev = NULL;
 		d->head->next = NULL;
 		d->tail = d->head;
 	} else {
-		Node* first = (Node*)malloc(sizeof(Node));
+		deqNode* first = (deqNode*)malloc(sizeof(deqNode));
 		first->val = t;
 		first->next = d->head;
 		first->prev = NULL;

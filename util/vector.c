@@ -38,7 +38,7 @@ void appendToVec(vector* vec, int x){
 
 int popFromVec(vector* vec){
 	if(vec->used == 0){
-		error("Popped from empty vector");
+		errExit("Popped from empty vector");
 	}
 	int result = vec->begin[vec->used - 1];
 	vec->begin[vec->used - 1] = 0;

@@ -19,7 +19,7 @@ typedef struct Label {
 	struct Label* next; // for hash table of labels
 } Label;
 
-typedef enum InstructionType {OP,OP_RA,OP_RA_IMM16,OP_RA_RB,OP_RA_RB_IMM,OP_RA_RB_RC} InstructionType;
+typedef enum InstructionType {OP,OP_RA,OP_RA_IMM16,OP_RA_RB,OP_RA_RB_IMM8,OP_RA_RB_RC} InstructionType;
 
 typedef enum ops {NOP,ADD,SUB,AND,ORR,XOR,NOT,LSH,ASH,TCU,TCS,SET,MOV,LDW,STW,LDB,STB} ops;
 
@@ -72,10 +72,10 @@ typedef union Instruction {
 
 typedef struct Macro {
 	char *name;
+	InstructionType instrType;
 	uint8_t* args;
 	uint8_t argSize;
 	Instruction instruction;
-	InstructionType instrType;
 	vector* submacros; // list of pointers to submacros
 	struct Macro* link; // for hash table of macros
 } Macro;

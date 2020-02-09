@@ -12,24 +12,16 @@
 
 #define numberOfBaseInstructions 17
 
-void assemble(FILE* file,FILE* bin,Label** labelTable);
+void assemble(FILE* file,FILE* bin,Label** labelTable,Macro** macroTable);
 
 // assembler-defined macros
 
-void include(char* token,FILE* bin,Label** labelTable);
-
-void pushc(char* token,FILE* bin,Label** labelTable);
-
-void pushr(char* token,FILE* bin,Label** labelTable);
-
-void pushret(char* token,FILE* bin,Label** labelTable);
-
-void pop(char* token,FILE* bin,Label** labelTable);
+void include(char* token,FILE* bin,Label** labelTable,Macro** macroTable);
 
 int main(int argc, char* argv[]){
 
 	if(argc != 3){
-		error("Usage: ./assemble fileName binaryName");
+		errExit("Usage: ./assemble fileName binaryName");
 	}
 
 	char* fileName = argv[1];
@@ -39,18 +31,25 @@ int main(int argc, char* argv[]){
 	FILE* bin = fopen(binFileName,"wb");
 
 	Label* labelTable[labelTableSize];
+	Macro* macroTable[macroTableSize];
 
 	for(int i = 0; i < labelTableSize;i++){
 		labelTable[i] = NULL;
 	}
 
+	for(int i = 0; i < macroTableSize;i++){
+		macroTable[i] = NULL;
+	}
+
+	generateBaseMacros(macroTable);
+
 	int lineNumber = 0;
 
-	labelParse(file,labelTable,&lineNumber);
+	ParseLabelsMacros(file,labelTable,macroTable,&lineNumber);
 
 	fseek(file,0,SEEK_SET);
 
-	printf("label parsed\n");
+	printf("labels and macros parsed\n");
 
 	for(int i = 0;i<labelTableSize;i++){
 		if(labelTable[i] != NULL){
@@ -58,7 +57,7 @@ int main(int argc, char* argv[]){
 		}
 	}
 
-	assemble(file,bin,labelTable);
+	assemble(file,bin,labelTable,macroTable);
 
 	fclose(file);
 	fclose(bin);
@@ -66,7 +65,7 @@ int main(int argc, char* argv[]){
 	return 0;
 }
 
-void assemble(FILE* file,FILE* bin,Label** labelTable){
+void assemble(FILE* file,FILE* bin,Label** labelTable,Macro** macroTable){
 
 	char line[256];
 
@@ -79,7 +78,12 @@ void assemble(FILE* file,FILE* bin,Label** labelTable){
 	uint8_t imm8 = 0;
 	uint16_t imm16 = 0;
 
-	uint8_t funcDef = 0;
+	Macro* macro;
+	Instruction macroInstr;
+	uint8_t constArg8;
+	uint16_t constArg16;
+
+	uint8_t macroDef = 0;
 
 	while (fgets(line, sizeof(line), file)) {
 	/* note that fgets don't strip the terminating \n, checking its
@@ -89,30 +93,43 @@ void assemble(FILE* file,FILE* bin,Label** labelTable){
 
 		token = strtok(line," ");
 
-		// include file
+		// special cases
 		if(strcmp(token,"inc") == 0){
-			include(token,bin,labelTable);
-			continue;
-		} else if(strcmp(token,"pushc") == 0){
-			pushc(token,bin,labelTable);
-			continue;
-		} else if(strcmp(token,"pushr") == 0){
-			pushr(token,bin,labelTable);
-			continue;
-		} else if(strcmp(token,"pushret") == 0){
-			pushret(token,bin,labelTable);
-			continue;
-		} else if(strcmp(token,"pop") == 0){
-			pop(token,bin,labelTable);
+			include(token,bin,labelTable,macroTable);
 			continue;
 		} else if(strcmp(token,"endProgram") == 0){
 			uint32_t m = UINT32_MAX;
 			fwrite(&m,4,1,bin);
 			continue;
+		} else if(strcmp(token,"def") == 0){
+			macroDef = 1;
+			continue;
+		} else if(macroDef == 1){
+			if(strcmp(token,"end") == 0){
+				macroDef = 0;
+			}
+			continue;
 		}
 
 		opcode = getOpcode(token);
-		instructionType instrType = getInstructionType(opcode);
+		InstructionType instrType = getInstructionType(opcode);
+
+		if(opcode == 17 && strcmp(token,"label") != 0){ // if it is not a base instruction, it is a macro or label
+			macroInstr.instruction32 = 0;
+			macro = getMacro(macroTable,token);
+			for(int i = 0; i < macro->argSize; i++){
+				token = strtok(NULL," ");
+				if(macro->instrType == OP_RA_IMM16 && i == 1){
+					constArg16 = evalToken(&token,labelTable);
+					macroInstr.opraimm.imm16 = constArg16;
+				} else {
+					constArg8 = evalToken(&token,labelTable);
+					macroInstr.instruction32 += (constArg8 << (8*(i+1)));
+				}
+			}
+			writeMacro(macro,macroInstr,bin);
+			continue;
+		}
 
 		switch(instrType){
 
@@ -126,7 +143,7 @@ void assemble(FILE* file,FILE* bin,Label** labelTable){
 			write_OP_RA(opcode,rA,bin);
 			break;
 
-			case OP_RA_IMM:
+			case OP_RA_IMM16:
 			token = strtok(NULL," ");
 			rA = evalToken(&token,labelTable);
 			token = strtok(NULL," ");
@@ -143,7 +160,7 @@ void assemble(FILE* file,FILE* bin,Label** labelTable){
 
 			break;
 
-			case OP_RA_RB_IMM:
+			case OP_RA_RB_IMM8:
 			token = strtok(NULL," ");
 			rA = evalToken(&token,labelTable);
 			token = strtok(NULL," ");
@@ -175,90 +192,10 @@ void assemble(FILE* file,FILE* bin,Label** labelTable){
 // assembler-defined macros
 
 // include a file
-void include(char* token,FILE* bin,Label** labelTable){
+void include(char* token,FILE* bin,Label** labelTable,Macro** macroTable){
 	FILE* header;
 	token = strtok(NULL," ");
 	header = fopen(token,"r");
-	assemble(header,bin,labelTable);
+	assemble(header,bin,labelTable,macroTable);
 	fclose(header);
-}
-
-// push a constant onto the stack
-void pushc(char* token,FILE* bin,Label** labelTable){
-	uint8_t opcode;
-	uint16_t imm16;
-
-	token = strtok(NULL," ");
-
-	opcode = getOpcode("set");
-	imm16 = (uint16_t)evalToken(&token,labelTable);
-	write_OP_RA_IMM(opcode,asm_AT,imm16,bin);
-
-	opcode = getOpcode("stw");
-	write_OP_RA_RB(opcode,asm_SP,asm_AT,bin);
-
-	opcode = getOpcode("set");
-	imm16 = 1;
-	write_OP_RA_IMM(opcode,asm_AT,imm16,bin);
-
-	opcode = getOpcode("add");
-	write_OP_RA_RB_RC(opcode,asm_SP,asm_SP,asm_AT,bin);
-}
-
-// push the value of a register onto the stack
-void pushr(char* token,FILE* bin,Label** labelTable){
-	uint8_t opcode;
-	uint8_t rA,rB,rC;
-	uint16_t imm16;
-
-	token = strtok(NULL," ");
-
-	opcode = getOpcode("stw");
-	rB = evalToken(&token,labelTable);
-	write_OP_RA_RB(opcode,asm_SP,rB,bin);
-
-	opcode = getOpcode("set");
-	imm16 = 1;
-	write_OP_RA_IMM(opcode,asm_AT,imm16,bin);
-
-	opcode = getOpcode("add");
-	write_OP_RA_RB_RC(opcode,asm_SP,asm_SP,asm_AT,bin);
-}
-
-// push the return address onto the stack. Function must be called immediately after.
-void pushret(char* token,FILE* bin,Label** labelTable){
-	uint8_t opcode;
-	uint16_t imm16;
-
-	opcode = getOpcode("set");
-	imm16 = 4;
-	write_OP_RA_IMM(opcode,asm_AT,imm16,bin);
-
-	opcode = getOpcode("add");
-	write_OP_RA_RB_RC(opcode,asm_AT,asm_AT,asm_PC,bin);
-
-	char pushAT[] = "pushr at";
-	token = strtok(pushAT," ");
-
-	pushr(token,bin,labelTable);
-}
-
-// pop a uint32_t off the stack into the register in argument
-void pop(char* token,FILE* bin,Label** labelTable){
-	uint8_t opcode;
-	uint8_t rA,rB,rC;
-	uint16_t imm16;
-
-	token = strtok(NULL," ");
-
-	opcode = getOpcode("set");
-	imm16 = 1;
-	write_OP_RA_IMM(opcode,asm_AT,imm16,bin);
-
-	opcode = getOpcode("sub");
-	write_OP_RA_RB_RC(opcode,asm_SP,asm_SP,asm_AT,bin);
-
-	opcode = getOpcode("ldw");
-	rA = evalToken(&token,labelTable);
-	write_OP_RA_RB(opcode,rA,asm_SP,bin);
 }

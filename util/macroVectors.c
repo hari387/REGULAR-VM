@@ -42,7 +42,7 @@ void appendToVec(vector* vec, vectorType x){
 
 vectorType popFromVec(vector* vec){
 	if(vec->size == 0){
-		error("Popped from empty vector");
+		errExit("Popped from empty vector");
 	}
 	vectorType result = vec->arr[vec->size - 1];
 	vec->arr[vec->size - 1] = NULL;

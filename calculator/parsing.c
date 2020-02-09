@@ -41,7 +41,7 @@ Token parseOperator(char op){
 		return ((Token){5,0});
 	}
 	printf("%c\n",op);
-	error("Invalid Operator");
+	errExit("Invalid Operator");
 	return ((Token){0,1});
 }
 
@@ -65,7 +65,7 @@ Token parseToken(char* tok){
 	}else if(strcmp(tok,")") == 0){
 		return ((Token){5,0});
 	}
-	error("Invalid Token");
+	errExit("Invalid Token");
 	return ((Token){0,1});
 }
 
@@ -93,7 +93,7 @@ deque* shuntingYard(deque* infix){
 			while(ops->tail->val.num != 4){
 				push_back_deque(revPolish,pop_back_deque(ops));
 				if(ops->size == 0){
-					error("Mismatched Parentheses");
+					errExit("Mismatched Parentheses");
 				}
 			}
 			if(ops->tail->val.num == 4){
@@ -135,18 +135,18 @@ int evalRevPolish(deque* revPolish){
 					break;
 				case 3:
 					if(n2 == 0){
-						error("Divided By Zero");
+						errExit("Divided By Zero");
 					}
 					push_back_deque(stack,(Token){n1/n2,1});
 					break;
 				default:
-					error("Unknown Operator");
+					errExit("Unknown Operator");
 					break;
 			}
 		}
 		curr = curr->next;
 	}
-	if(stack->size > 1)error("Missing Operator");
+	if(stack->size > 1)errExit("Missing Operator");
 	int res = stack->head->val.num;
 	delDeque(stack);
 	return res;

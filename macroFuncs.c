@@ -5,6 +5,7 @@
 
 #include "ASMtypedefs.c"
 
+#include "error.h"
 #include "util/macroVectors.c"
 
 // OP,OP_RA,OP_RA_IMM,OP_RA_RB,OP_RA_RB_IMM,OP_RA_RB_RC
@@ -26,6 +27,10 @@ Macro* getMacro(Macro** macroTable,char* name){
 	while(macro != NULL && strcmp(macro->name,name) != 0){
 		macro = macro->link;
 	}
+	if(macro == NULL){
+		printf("name: %s\n",name);
+		errExit("Macro not found");
+	}
 	return macro;
 }
 
@@ -42,7 +47,27 @@ void putMacro(Macro** macroTable,Macro* macro){
 	}
 }
 
+void recursiveMacroSize(Macro* macro,int* size){
+	if(macro->submacros == NULL){
+		(*size)++;
+		return;
+	}
+	for(int i = 0;i<macro->submacros->size;i++){
+		recursiveMacroSize(macro->submacros->arr[i],size);
+	}
+}
+
+int macroSize(Macro* macro){
+	int size = 0;
+	recursiveMacroSize(macro,&size);
+	return size;
+}
+
 Macro* copyMacro(Macro* macro) {
+
+	if(macro == NULL){
+		errExit("macro* is NULL, could not copy");
+	}
 
 	Macro* newMacro = (Macro*)malloc(sizeof(Macro));
 	newMacro->name = macro->name; //name values are not modified, can use same pointer. Therefore do not deep copy name.
@@ -81,7 +106,7 @@ void writeMacro(Macro* macro,Instruction funcArgs,FILE* bin){
 
 void subFuncArgs(Instruction *instr,Instruction funcArgs,uint8_t* args,uint8_t argSize){
 	for(int i = 1;i<=argSize;i++){
-		if(args[i-1] != 0){
+		if(args[i-1] != NONE){
 			switch(args[i-1]){
 				case RA:
 				instr->instruction32 += (funcArgs.opra.ra << 8*i);
@@ -119,7 +144,7 @@ void generateBaseMacros(Macro** macroTable){
 	add->name = "add";
 	add->args = (uint8_t*)malloc(sizeof(uint8_t)*3);
 	add->argSize = 3;
-	add->args[0] = 1; add->args[1] = 1; add->args[2] = 3;
+	add->args[0] = RA; add->args[1] = RB; add->args[2] = RC;
 	add->instruction.instruction32 = ADD;
 	add->instrType = OP_RA_RB_RC;
 	add->submacros = NULL;
@@ -130,7 +155,7 @@ void generateBaseMacros(Macro** macroTable){
 	sub->name = "sub";
 	sub->args = (uint8_t*)malloc(sizeof(uint8_t)*3);
 	sub->argSize = 3;
-	sub->args[0] = 1; sub->args[1] = 1; sub->args[2] = 3;
+	sub->args[0] = RA; sub->args[1] = RB; sub->args[2] = RC;
 	sub->instruction.instruction32 = SUB;
 	sub->instrType = OP_RA_RB_RC;
 	sub->submacros = NULL;
@@ -141,7 +166,7 @@ void generateBaseMacros(Macro** macroTable){
 	and->name = "and";
 	and->args = (uint8_t*)malloc(sizeof(uint8_t)*3);
 	and->argSize = 3;
-	and->args[0] = 1; and->args[1] = 1; and->args[2] = 3;
+	and->args[0] = RA; and->args[1] = RB; and->args[2] = RC;
 	and->instruction.instruction32 = AND;
 	and->instrType = OP_RA_RB_RC;
 	and->submacros = NULL;
@@ -152,7 +177,7 @@ void generateBaseMacros(Macro** macroTable){
 	orr->name = "orr";
 	orr->args = (uint8_t*)malloc(sizeof(uint8_t)*3);
 	orr->argSize = 3;
-	orr->args[0] = 1; orr->args[1] = 2; orr->args[2] = 3;
+	orr->args[0] = RA; orr->args[1] = RB; orr->args[2] = RC;
 	orr->instruction.instruction32 = ORR;
 	orr->instrType = OP_RA_RB_RC;
 	orr->submacros = NULL;
@@ -163,7 +188,7 @@ void generateBaseMacros(Macro** macroTable){
 	xor->name = "xor";
 	xor->args = (uint8_t*)malloc(sizeof(uint8_t)*3);
 	xor->argSize = 3;
-	xor->args[0] = 1; xor->args[1] = 2; xor->args[2] = 3;
+	xor->args[0] = RA; xor->args[1] = RB; xor->args[2] = RC;
 	xor->instruction.instruction32 = XOR;
 	xor->instrType = OP_RA_RB_RC;
 	xor->submacros = NULL;
@@ -174,7 +199,7 @@ void generateBaseMacros(Macro** macroTable){
 	not->name = "not";
 	not->args = (uint8_t*)malloc(sizeof(uint8_t)*2);
 	not->argSize = 2;
-	not->args[0] = 1; not->args[1] = 2;
+	not->args[0] = RA; not->args[1] = RB;
 	not->instruction.instruction32 = NOT;
 	not->instrType = OP_RA_RB;
 	not->submacros = NULL;
@@ -185,7 +210,7 @@ void generateBaseMacros(Macro** macroTable){
 	lsh->name = "lsh";
 	lsh->args = (uint8_t*)malloc(sizeof(uint8_t)*3);
 	lsh->argSize = 3;
-	lsh->args[0] = 1; lsh->args[1] = 2; lsh->args[2] = 3;
+	lsh->args[0] = RA; lsh->args[1] = RB; lsh->args[2] = RC;
 	lsh->instruction.instruction32 = LSH;
 	lsh->instrType = OP_RA_RB_RC;
 	lsh->submacros = NULL;
@@ -196,7 +221,7 @@ void generateBaseMacros(Macro** macroTable){
 	ash->name = "ash";
 	ash->args = (uint8_t*)malloc(sizeof(uint8_t)*3);
 	ash->argSize = 3;
-	ash->args[0] = 1; ash->args[1] = 2; ash->args[2] = 3;
+	ash->args[0] = RA; ash->args[1] = RB; ash->args[2] = RC;
 	ash->instruction.instruction32 = ASH;
 	ash->instrType = OP_RA_RB_RC;
 	ash->submacros = NULL;
@@ -207,7 +232,7 @@ void generateBaseMacros(Macro** macroTable){
 	tcu->name = "tcu";
 	tcu->args = (uint8_t*)malloc(sizeof(uint8_t)*3);
 	tcu->argSize = 3;
-	tcu->args[0] = 1; tcu->args[1] = 2; tcu->args[2] = 3;
+	tcu->args[0] = RA; tcu->args[1] = RB; tcu->args[2] = RC;
 	tcu->instruction.instruction32 = TCU;
 	tcu->instrType = OP_RA_RB_RC;
 	tcu->submacros = NULL;
@@ -218,7 +243,7 @@ void generateBaseMacros(Macro** macroTable){
 	tcs->name = "tcs";
 	tcs->args = (uint8_t*)malloc(sizeof(uint8_t)*3);
 	tcs->argSize = 3;
-	tcs->args[0] = 1; tcs->args[1] = 2; tcs->args[2] = 3;
+	tcs->args[0] = RA; tcs->args[1] = RB; tcs->args[2] = RC;
 	tcs->instruction.instruction32 = TCS;
 	tcs->instrType = OP_RA_RB_RC;
 	tcs->submacros = NULL;
@@ -229,7 +254,7 @@ void generateBaseMacros(Macro** macroTable){
 	set->name = "set";
 	set->args = (uint8_t*)malloc(sizeof(uint8_t)*2);
 	set->argSize = 2;
-	set->args[0] = 1; set->args[1] = 2;
+	set->args[0] = RA; set->args[1] = IMM16;
 	set->instruction.instruction32 = SET;
 	set->instrType = OP_RA_IMM16;
 	set->submacros = NULL;
@@ -240,7 +265,7 @@ void generateBaseMacros(Macro** macroTable){
 	mov->name = "mov";
 	mov->args = (uint8_t*)malloc(sizeof(uint8_t)*2);
 	mov->argSize = 2;
-	mov->args[0] = 1; mov->args[1] = 2;
+	mov->args[0] = RA; mov->args[1] = RB;
 	mov->instruction.instruction32 = MOV;
 	mov->instrType = OP_RA_RB;
 	mov->submacros = NULL;
@@ -251,7 +276,7 @@ void generateBaseMacros(Macro** macroTable){
 	ldw->name = "ldw";
 	ldw->args = (uint8_t*)malloc(sizeof(uint8_t)*2);
 	ldw->argSize = 2;
-	ldw->args[0] = 1; ldw->args[1] = 2;
+	ldw->args[0] = RA; ldw->args[1] = RB;
 	ldw->instruction.instruction32 = LDW;
 	ldw->instrType = OP_RA_RB;
 	ldw->submacros = NULL;
@@ -262,7 +287,7 @@ void generateBaseMacros(Macro** macroTable){
 	stw->name = "stw";
 	stw->args = (uint8_t*)malloc(sizeof(uint8_t)*2);
 	stw->argSize = 2;
-	stw->args[0] = 1; stw->args[1] = 2;
+	stw->args[0] = RA; stw->args[1] = RB;
 	stw->instruction.instruction32 = STW;
 	stw->instrType = OP_RA_RB;
 	stw->submacros = NULL;
@@ -273,7 +298,7 @@ void generateBaseMacros(Macro** macroTable){
 	ldb->name = "ldb";
 	ldb->args = (uint8_t*)malloc(sizeof(uint8_t)*2);
 	ldb->argSize = 2;
-	ldb->args[0] = 1; ldb->args[1] = 2;
+	ldb->args[0] = RA; ldb->args[1] = RB;
 	ldb->instruction.instruction32 = LDB;
 	ldb->instrType = OP_RA_RB;
 	ldb->submacros = NULL;
@@ -284,7 +309,7 @@ void generateBaseMacros(Macro** macroTable){
 	stb->name = "stb";
 	stb->args = (uint8_t*)malloc(sizeof(uint8_t)*2);
 	stb->argSize = 2;
-	stb->args[0] = 1; stb->args[1] = 2;
+	stb->args[0] = RA; stb->args[1] = RB;
 	stb->instruction.instruction32 = STB;
 	stb->instrType = OP_RA_RB;
 	stb->submacros = NULL;

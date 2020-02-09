@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
-#include "../util/vector.c"
 #include "../util/deque.c"
 #include "parsing.c"
 #include "../error.h"
@@ -33,7 +32,7 @@ int calculate(char* expr){
 					continue;
 				}
 				if(!notOp(expr[i+1])){
-					error("Invalid Operator Sequence");
+					errExit("Invalid Operator Sequence");
 				}
 				push_back_deque(infix,parseNum(strtol(expr + i,NULL,0)));
 				i++;

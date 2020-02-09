@@ -41,11 +41,13 @@ uint8_t getOpcode(char* op){
 	} else if(strcmp(op,"stb") == 0){
 		return 16;
 	} else {
-		return 0;
+		return 17; 
+		// for macros, 17 is not an actual opcode written to binaries
+		// all non-base instructions are macros
 	}
 }
 
-instructionType getInstructionType(int opcode){
+InstructionType getInstructionType(int opcode){
 	if(opcode==0)return OP;
 	else if(opcode>=1 && opcode<=5)return OP_RA_RB_RC;
 	else if(opcode==6)return OP_RA_RB;
@@ -55,13 +57,14 @@ instructionType getInstructionType(int opcode){
 	else return OP; //unneeded except for getting rid of warning
 }
 
+Label* retrieveLabel(char* name,Label** labelTable);
+
 int evalToken(char** tokenptr,Label** labelTable){
 	Label* lookup;
 	if(strcmp((*tokenptr),"sp")==0)return asm_SP;
 	else if(strcmp((*tokenptr),"at")==0)return asm_AT;
 	else if(strcmp((*tokenptr),"pc")==0)return asm_PC;
 	else if(NULL != (lookup = retrieveLabel(*tokenptr,labelTable))){
-		printf("label retrieved\n");
 		return lookup->address;
 	}
 	else if((*tokenptr)[0] == 'r'){

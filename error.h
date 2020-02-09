@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void error(char* errorCode){
+void errExit(char* errorCode){
 	printf("Error: %s\n",errorCode);
 	exit(1);
 }

@@ -88,7 +88,7 @@ void executeInstruction(uint8_t opcode,uint32_t registers[],uint32_t* pc, uint32
 			break;
 		case LSH:
 			if(registers[rC] >= 32 && registers[rC] <= -32){ //signed - unsigned comparison is weird
-				error("Shifting 32 bit int by more than 32");
+				errExit("Shifting 32 bit int by more than 32");
 			} else if((int32_t)registers[rC] < 0){
 				registers[rA] = registers[rB] >> -(int32_t)registers[rC];
 			} else {
@@ -97,7 +97,7 @@ void executeInstruction(uint8_t opcode,uint32_t registers[],uint32_t* pc, uint32
 			break;
 		case ASH:
 			if(registers[rC] >= 32 || registers[rC] <= -32){
-				error("Shifting 32 bit int by more than 32");
+				errExit("Shifting 32 bit int by more than 32");
 			} else if(registers[rC] < 0){
 				registers[rA] = (registers[rB] >> -registers[rC]) + (registers[rB]%(uint32_t)pow(2,31))/pow(2,31);
 			} else {
